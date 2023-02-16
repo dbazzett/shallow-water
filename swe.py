@@ -1,21 +1,28 @@
 
-"""Script that solves that solves the 2D shallow water equations using finite
+"""
+Script that solves that solves the 2D shallow water equations using finite
 differences where the momentum equations are taken to be linear, but the
-continuity equation is solved in its nonlinear form. The model supports turning
-on/off various terms, but in its mst complete form, the model solves the following
-set of eqations:
+continuity equation is solved in its nonlinear form. 
+
+The model supports turning on/off various terms, but in its mst complete form,
+the model solves the following set of equations:
 
     du/dt - fv = -g*d(eta)/dx + tau_x/(rho_0*H)- kappa*u
+    
     dv/dt + fu = -g*d(eta)/dy + tau_y/(rho_0*H)- kappa*v
+    
     d(eta)/dt + d((eta + H)*u)/dx + d((eta + H)*u)/dy = sigma - w
 
-where f = f_0 + beta*y can be the full latitude varying coriolis parameter.
+where f = f_0 + beta*y can be the full latitude-varying coriolis parameter.
+
 For the momentum equations, an ordinary forward-in-time centered-in-space
 scheme is used. However, the coriolis terms is not so trivial, and thus, one
 first finds a predictor for u, v and then a corrected value is computed in
-order to include the coriolis terms. In the continuity equation, it's used a
-forward difference for the time derivative and an upwind scheme for the non-
-linear terms. The model is stable under the CFL condition of
+order to include the coriolis terms.
+
+In the continuity equation, it's used a forward difference for the time 
+derivative and an upwind scheme for the non-linear terms. The model is stable
+under the CFL condition of
 
     dt <= min(dx, dy)/sqrt(g*H)    and    alpha << 1 (if coriolis is used)
 
@@ -33,18 +40,18 @@ import viz_tools
 # --------------- Physical prameters ---------------
 L_x = 1E+6              # Length of domain in x-direction
 L_y = 1E+6              # Length of domain in y-direction
-g = 9.81                 # Acceleration of gravity [m/s^2]
-H = 100                # Depth of fluid [m]
-f_0 = 1E-4              # Fixed part ofcoriolis parameter [1/s]
-beta = 2E-11            # gradient of coriolis parameter [1/ms]
+g = 9.81                # Acceleration of gravity [m/s^2]
+H = 100                 # Depth of fluid [m]
+f_0 = 1E-4              # Fixed part of coriolis parameter [1/s]
+beta = 2E-11            # Gradient   of coriolis parameter [1/ms]
 rho_0 = 1024.0          # Density of fluid [kg/m^3)]
 tau_0 = 0.1             # Amplitude of wind stress [kg/ms^2]
 use_coriolis = True     # True if you want coriolis force
-use_friction = False     # True if you want bottom friction
+use_friction = False    # True if you want bottom friction
 use_wind = False        # True if you want wind stress
 use_beta = True         # True if you want variation in coriolis
-use_source = False       # True if you want mass source into the domain
-use_sink = False       # True if you want mass sink out of the domain
+use_source = False      # True if you want mass source into the domain
+use_sink = False        # True if you want mass sink out of the domain
 param_string = "\n================================================================"
 param_string += "\nuse_coriolis = {}\nuse_beta = {}".format(use_coriolis, use_beta)
 param_string += "\nuse_friction = {}\nuse_wind = {}".format(use_friction, use_wind)
@@ -93,14 +100,14 @@ if (use_wind is True):
 # Define coriolis array if coriolis is enabled.
 if (use_coriolis is True):
     if (use_beta is True):
-        f = f_0 + beta*y        # Varying coriolis parameter
-        L_R = np.sqrt(g*H)/f_0  # Rossby deformation radius
-        c_R = beta*g*H/f_0**2   # Long Rossby wave speed
+        f = f_0 + beta*y           # Varying coriolis parameter
+        L_R = np.sqrt(g*H)/f_0     # Rossby deformation radius
+        c_R = beta*g*H/f_0**2      # Long Rossby wave speed
     else:
-        f = f_0*np.ones(len(y))                 # Constant coriolis parameter
+        f = f_0*np.ones(len(y))    # Constant coriolis parameter
 
-    alpha = dt*f                # Parameter needed for coriolis scheme
-    beta_c = alpha**2/4         # Parameter needed for coriolis scheme
+    alpha = dt*f                   # Parameter needed for coriolis scheme
+    beta_c = alpha**2/4            # Parameter needed for coriolis scheme
 
     param_string += "\nf_0 = {:g}".format(f_0)
     param_string += "\nMax alpha = {:g}\n".format(alpha.max())
@@ -126,13 +133,14 @@ with open("param_output.txt", "w") as output_file:
 print(param_string)     # Also print parameters to screen
 # ============================= Parameter stuff done ===============================
 
+
 # ==================================================================================
 # ==================== Allocating arrays and initial conditions ====================
 # ==================================================================================
 u_n = np.zeros((N_x, N_y))      # To hold u at current time step
 u_np1 = np.zeros((N_x, N_y))    # To hold u at next time step
 v_n = np.zeros((N_x, N_y))      # To hold v at current time step
-v_np1 = np.zeros((N_x, N_y))    # To hold v at enxt time step
+v_np1 = np.zeros((N_x, N_y))    # To hold v at next time step
 eta_n = np.zeros((N_x, N_y))    # To hold eta at current time step
 eta_np1 = np.zeros((N_x, N_y))  # To hold eta at next time step
 
@@ -167,11 +175,12 @@ hm_sample = list(); ts_sample = list(); t_sample = list()   # Lists for Hovmulle
 hm_sample.append(eta_n[:, int(N_y/2)])                      # Sample initial eta in middle of domain
 ts_sample.append(eta_n[int(N_x/2), int(N_y/2)])             # Sample initial eta at center of domain
 t_sample.append(0.0)                                        # Add initial time to t-samples
-anim_interval = 20                                         # How often to sample for time series
+anim_interval = 20                                          # How often to sample for time series
 sample_interval = 1000                                      # How often to sample for time series
 # =============== Done with setting up arrays and initial conditions ===============
 
 t_0 = time.perf_counter()  # For timing the computation loop
+
 
 # ==================================================================================
 # ========================= Main time loop for simulation ==========================
@@ -197,7 +206,7 @@ while (time_step < max_time_step):
         v_np1[:, :] = (v_np1[:, :] - beta_c*v_n[:, :] - alpha*u_n[:, :])/(1 + beta_c)
     
     v_np1[:, -1] = 0.0      # Northern boundary condition
-    u_np1[-1, :] = 0.0      # Eastern boundary condition
+    u_np1[-1, :] = 0.0      # Eastern  boundary condition
     # -------------------------- Done with u and v -----------------------------
 
     # --- Computing arrays needed for the upwind scheme in the eta equation.----
@@ -256,6 +265,7 @@ while (time_step < max_time_step):
 # ============================= Main time loop done ================================
 print("Main computation loop done!\nExecution time: {:.2f} s".format(time.perf_counter() - t_0))
 print("\nVisualizing results...")
+
 
 # ==================================================================================
 # ================== Visualizing results by call to external file ==================
